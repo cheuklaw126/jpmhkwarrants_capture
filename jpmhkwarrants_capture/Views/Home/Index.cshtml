@@ -1,0 +1,246 @@
+﻿@using jpmhkwarrants_capture.Models;
+@{
+
+
+    ViewBag.Title = "Home Page";
+    var time = Convert.ToInt32(ViewData["time"].ToString()) * 1000;
+
+    var list = (int)ViewData["list"];
+    //var cur = string.Join(",", list);
+
+}
+
+@*<div class="jumbotron">
+
+    </div>*@
+<div class="container">
+    @*<div class="row">
+            <div class="col-md-6" id="alluser">
+                最大使用人數：@list /5 人
+
+            </div>
+            <div class="col-md-6">
+                每 @(time / 1000) 秒更新
+
+            </div>
+        </div>*@
+
+    @*<div class="row">
+     
+        <div class="col-md">
+            <div class="card text-white bg-warning mb-3" style="max-width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Info card title</h5>
+                    <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                </div>
+            </div>
+
+        </div>
+        <div class="col-md">
+            <div class="card text-white bg-success mb-3" style="max-width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Success card title</h5>
+                    <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                </div>
+            </div>
+        </div> <div class="col-md">
+            <div class="card text-white bg-danger mb-3" style="max-width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Danger card title</h5>
+                    <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                </div>
+            </div>
+
+
+        </div>
+
+    </div>*@
+
+    <div class="row">
+
+
+        <div class="col-md-8">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-header py-3">
+                    摩根大通輪證
+                </div>
+                <div class="card">
+                    @*<img class="card-img-top" src="..." alt="Card image cap">*@
+                    <div class="card-body" id="main">
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="col-md">
+            <div class="card text-white bg-info mb-3" style="max-width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title"> </h5>
+                    <p class="card-text">
+                        <i class="fa fa-refresh" aria-hidden="true"> 每 @(time / 1000) 秒更新</i>
+
+
+
+                       
+                    </p>
+                    <p class="card-text">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="isSound" checked>
+                            <label class="form-check-label" for="defaultCheck1">
+                                <i class="fa fa-volume-up" aria-hidden="true"> 更新聲效</i>
+                               
+                            </label>
+                            </div>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+
+<script>
+    //updateTable();
+
+    var isHere = true;
+    Swal.fire({
+        title: '開始自動更新?',
+        text: "",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'OK'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            updateTable();
+          var    reload = setInterval(updateTable, @time);
+
+            //4hrs
+            setInterval(chkIsHere, 14400000);
+
+
+        }
+    })
+
+    function chkIsHere() {
+        isHere = false;
+
+
+    Swal.fire({
+        title: 'Are you still here?',
+        text: "",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'OK'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            isHere = true;
+        }
+
+    })
+
+
+
+    }
+
+    function updateAllUser() {
+        $.ajax({
+            url: "/home/GetActUser",
+            type: "POST",
+            //data: formData,
+            success: function (data) {
+                $("#alluser").html(data);
+            }
+        });
+    }
+
+    var batchid;
+    function updateTable() {
+        if (isHere == false) {
+
+            console.log('88');
+            return;
+
+        }
+        $.ajax({
+            url: "/home/GetData",
+            type: "POST",
+            data: { userBatch: batchid},
+            success: function (data) {
+              //  updateAllUser();
+                $("#main").empty();
+                //vid.muted = false;
+                //vid.play();
+                console.log(data);
+                var tableDt = JSON.parse(data)["Data"];
+                console.log(tableDt);
+                batchid = JSON.parse(data)["BatchID"];
+                var txt = '<Table  class="table table-bordered"><thead ><tr><th>摩根大通產品</th><th class="line">現價</th><th>&nbsp;</th></tr></thead><tbody>';
+                var isNew = false;
+                $.each(tableDt, function (i, item) {
+                    if (item["IsNew"] == "0")
+                        txt = txt + '<tr class="">';
+
+                    else {
+                        txt = txt + '<tr class="bg-warning">';
+                        isNew = true;
+
+                    }
+                    txt = txt + "<td>" + item["Name"] + "</td > "
+                        + "<td>" + item["Value"] + "</td>"
+                    + "<td>" + item["LastSync"] + "</td>";
+
+                  
+                    txt = txt + "</tr>";
+
+                    //console.log(item["Name"]);
+                    //console.log(item["Value"]);
+                    //console.log(item["IsNew"]);
+                });
+                if (isNew) {
+                    if ($("#isSound").is(':checked')) {
+                        $.playSound("/Content/msg.mp3");
+                    }
+
+
+                }
+                txt = txt + "</tbody></table>";
+
+                console.log(txt);
+                $("#main").append(txt);
+                //data - response from server
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                if (jqXHR.status == 503) {
+
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer)
+                            toast.addEventListener('mouseleave', Swal.resumeTimer)
+                        }
+                    })
+
+                    Toast.fire({
+                        icon: 'error',
+                        title: 'Connection limit, please close some browser and try again.'
+                    })
+
+                }
+            }
+        });
+    }
+</script>

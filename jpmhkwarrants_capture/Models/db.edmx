@@ -1,0 +1,184 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="StockModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="JPMorgan">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="255" Nullable="false" />
+          <Property Name="Value" Type="decimal" Precision="14" Scale="4" Nullable="false" />
+          <Property Name="LastSync" Type="datetime" Nullable="false" />
+          <Property Name="BatchID" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="JPMorganSync">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="LastSync" Type="datetime" Nullable="false" />
+        </EntityType>
+        <EntityType Name="pool">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="key" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="datetime" Type="datetime" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Setup">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="UpdatePerSec" Type="int" Nullable="false" />
+        </EntityType>
+        <!--產生期間發現錯誤:
+警告 6002: 資料表/檢視 'Stock.dbo.GetConnection' 未定義主索引鍵。已推斷此索引鍵，並將定義建立成唯讀的資料表/檢視。-->
+        <EntityType Name="GetConnection">
+          <Key>
+            <PropertyRef Name="net_address" />
+          </Key>
+          <Property Name="DBName" Type="nvarchar" MaxLength="128" />
+          <Property Name="net_address" Type="nchar" MaxLength="12" Nullable="false" />
+        </EntityType>
+        <EntityContainer Name="StockModelStoreContainer">
+          <EntitySet Name="JPMorgan" EntityType="Self.JPMorgan" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="JPMorganSync" EntityType="Self.JPMorganSync" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="pool" EntityType="Self.pool" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Setup" EntityType="Self.Setup" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="GetConnection" EntityType="Self.GetConnection" store:Type="Views" store:Schema="dbo">
+            <DefiningQuery>SELECT 
+    [GetConnection].[DBName] AS [DBName], 
+    [GetConnection].[net_address] AS [net_address]
+    FROM [dbo].[GetConnection] AS [GetConnection]</DefiningQuery>
+          </EntitySet>
+        </EntityContainer>
+      </Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="StockModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityContainer Name="StockEntities1" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="JPMorgans" EntityType="StockModel.JPMorgan" />
+          <EntitySet Name="JPMorganSyncs" EntityType="StockModel.JPMorganSync" />
+          <EntitySet Name="Setups" EntityType="StockModel.Setup" />
+          <EntitySet Name="pool" EntityType="StockModel.pool" />
+          <EntitySet Name="GetConnection" EntityType="StockModel.GetConnection" />
+        </EntityContainer>
+        <EntityType Name="JPMorgan">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" Nullable="false" MaxLength="255" FixedLength="false" Unicode="true" />
+          <Property Name="Value" Type="Decimal" Nullable="false" Precision="14" Scale="4" />
+          <Property Name="LastSync" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="BatchID" Type="Int32" Nullable="false" />
+        </EntityType>
+        <EntityType Name="JPMorganSync">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="LastSync" Type="DateTime" Nullable="false" Precision="3" />
+        </EntityType>
+        <EntityType Name="Setup">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="UpdatePerSec" Type="Int32" Nullable="false" />
+        </EntityType>
+        <EntityType Name="pool">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="key" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="datetime" Type="DateTime" Nullable="false" Precision="3" />
+        </EntityType>
+        <EntityType Name="GetConnection">
+          <Key>
+            <PropertyRef Name="net_address" />
+          </Key>
+          <Property Name="DBName" Type="String" MaxLength="128" FixedLength="false" Unicode="true" />
+          <Property Name="net_address" Type="String" Nullable="false" MaxLength="12" FixedLength="true" Unicode="true" />
+        </EntityType>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="StockModelStoreContainer" CdmEntityContainer="StockEntities1">
+          <EntitySetMapping Name="JPMorgans">
+            <EntityTypeMapping TypeName="StockModel.JPMorgan">
+              <MappingFragment StoreEntitySet="JPMorgan">
+                <ScalarProperty Name="BatchID" ColumnName="BatchID" />
+                <ScalarProperty Name="LastSync" ColumnName="LastSync" />
+                <ScalarProperty Name="Value" ColumnName="Value" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="id" ColumnName="id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="JPMorganSyncs">
+            <EntityTypeMapping TypeName="StockModel.JPMorganSync">
+              <MappingFragment StoreEntitySet="JPMorganSync">
+                <ScalarProperty Name="LastSync" ColumnName="LastSync" />
+                <ScalarProperty Name="id" ColumnName="id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Setups">
+            <EntityTypeMapping TypeName="StockModel.Setup">
+              <MappingFragment StoreEntitySet="Setup">
+                <ScalarProperty Name="UpdatePerSec" ColumnName="UpdatePerSec" />
+                <ScalarProperty Name="id" ColumnName="id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="pool">
+            <EntityTypeMapping TypeName="StockModel.pool">
+              <MappingFragment StoreEntitySet="pool">
+                <ScalarProperty Name="datetime" ColumnName="datetime" />
+                <ScalarProperty Name="key" ColumnName="key" />
+                <ScalarProperty Name="id" ColumnName="id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="GetConnection">
+            <EntityTypeMapping TypeName="StockModel.GetConnection">
+              <MappingFragment StoreEntitySet="GetConnection">
+                <ScalarProperty Name="net_address" ColumnName="net_address" />
+                <ScalarProperty Name="DBName" ColumnName="DBName" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="False" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="無" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>
