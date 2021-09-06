@@ -9,6 +9,15 @@
     //var cur = string.Join(",", list);
 
 }
+<style>
+   
+    .bg-info >td>a{
+        color: white;
+        text-decoration: none;
+        background-color: transparent;
+    }
+
+</style>
 
 @*<div class="jumbotron">
 
@@ -85,17 +94,39 @@
 
 
 
-                       
+
                     </p>
                     <p class="card-text">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" value="" id="isSound" checked>
                             <label class="form-check-label" for="defaultCheck1">
                                 <i class="fa fa-volume-up" aria-hidden="true"> 更新聲效</i>
-                               
+
                             </label>
-                            </div>
+                        </div>
                     </p>
+
+                    <p class="card-text">
+                        <div class="form-check">
+
+                            <label class="form-check-label" id="mainDay">
+
+
+                            </label>
+                        </div>
+                    </p>
+
+                    <p class="card-text">
+                        <div class="form-check">
+
+                            <label class="form-check-label" id="ServerDay">
+
+
+                            </label>
+                        </div>
+                    </p>
+
+
                 </div>
             </div>
         </div>
@@ -106,6 +137,19 @@
 
 
 <script>
+
+    $("#mainDay").text("Maintenance remain " +( 180 + datediff(new Date(),new Date('2021,08,31')) )+' /Days');
+    $("#ServerDay").text("Server remain " + ( datediff(new Date(), new Date('2023, 08, 19')) )+' /Days');
+
+
+
+    function datediff(first, second) {
+        // Take the difference between the dates and divide by milliseconds per day.
+        // Round to nearest whole number to deal with DST.
+        return Math.round((second - first) / (1000 * 60 * 60 * 24));
+    }
+
+
     //updateTable();
 
     var isHere = true;
@@ -174,33 +218,46 @@
         $.ajax({
             url: "/home/GetData",
             type: "POST",
-            data: { userBatch: batchid},
+            data: { strScreenBatchID: batchid},
             success: function (data) {
               //  updateAllUser();
                 $("#main").empty();
                 //vid.muted = false;
                 //vid.play();
-                console.log(data);
+             //   console.log(data);
                 var tableDt = JSON.parse(data)["Data"];
                 console.log(tableDt);
                 batchid = JSON.parse(data)["BatchID"];
-                var txt = '<Table  class="table table-bordered"><thead ><tr><th>摩根大通產品</th><th class="line">現價</th><th>&nbsp;</th></tr></thead><tbody>';
+                var txt = '<Table  class="table table-bordered"><thead ><tr><th>摩根大通產品</th><th class="line">現價</th>      <th>Update Time</th></tr></thead><tbody>';
                 var isNew = false;
+
+                var ExceptList = "";
+
                 $.each(tableDt, function (i, item) {
-                    if (item["IsNew"] == "0")
+                    if (!item["isHighLight"] )
                         txt = txt + '<tr class="">';
 
                     else {
                         txt = txt + '<tr class="bg-warning">';
-                        isNew = true;
+
+                        isNew = item["isListChange"];
 
                     }
                     txt = txt + "<td>" + item["Name"] + "</td > "
                         + "<td>" + item["Value"] + "</td>"
+                        //+ "<td>" + item["Difference"] + "</td>"
                     + "<td>" + item["LastSync"] + "</td>";
 
-                  
+                   
                     txt = txt + "</tr>";
+                    ExceptList = "";
+                    if (item["ExceptList"] != null) {
+                        $.each(item["ExceptList"], function (i, expItem) {
+
+                            ExceptList += '<tr class="bg-info text-light">' + "<td>" + expItem + "</td > " + "<td>" + '-' + "</td>" + "<td>" + '-' + "</td>" ;
+                        });
+                    }
+
 
                     //console.log(item["Name"]);
                     //console.log(item["Value"]);
@@ -213,9 +270,10 @@
 
 
                 }
+                txt += ExceptList;
                 txt = txt + "</tbody></table>";
 
-                console.log(txt);
+               // console.log(txt);
                 $("#main").append(txt);
                 //data - response from server
             },

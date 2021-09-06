@@ -96,63 +96,205 @@ namespace jpmhkwarrants_capture.Controllers
             return $@"最大使用人數：{list.Count} /5 人";
         }
 
-        public bool isNew(string newProduct, int currentBatch, int userBatchid)
+        public bool isHighLight(string newProduct, int currentBatchID, int screenBatchID)
         {
+            if (currentBatchID == screenBatchID)
+                return true;
 
-            if (currentBatch == userBatchid)
-                return false;
-
-            var lastBatch = db.JPMorganSyncs.Where(x => x.id != currentBatch).ToList().LastOrDefault();
+            var lastBatch = db.JPMorganSyncs.Where(x => x.id != currentBatchID).ToList().LastOrDefault();
             if (lastBatch == null)
             {
                 return true;
             }
-
-
-
-
-            return db.JPMorgans.Where(x => x.BatchID == lastBatch.id && x.Name == newProduct ).FirstOrDefault() == null;
-
-
+            return db.JPMorgans.Where(x => x.BatchID == lastBatch.id && x.Name == newProduct).FirstOrDefault() == null;
         }
 
-        public async Task<JObject> GetData(string userBatch)
+
+        public bool isListChange(string newProduct, int currentBatchID, int screenBatchID)
         {
-            if (string.IsNullOrEmpty(userBatch))
-                userBatch = "0";
-            int userBathid = Convert.ToInt32(userBatch);
+            if (currentBatchID == screenBatchID)
+                return false;
+
+            var currentItems = db.JPMorgans.Where(x => x.BatchID == currentBatchID && x.Name == newProduct).ToList();
+            var screenItems = db.JPMorgans.Where(x => x.BatchID == screenBatchID && x.Name == newProduct).ToList();
+
+            if (screenItems.Count == 0)
+                return true;
+
+            return string.Join("", currentItems.Select(x => x.Name)) != string.Join("", screenItems.Select(x => x.Name));
+        }
+
+        public JObject GetCompare(string newProduct, int currentBatchID, int screenBatchID)
+        {
+            var jobj = new JObject();
+
+            bool isListChange = false;
+            bool isHighLight = true;
+            var currentItems = db.JPMorgans.Where(x => x.BatchID == currentBatchID).ToList();
+            var screenItems = db.JPMorgans.Where(x => x.BatchID == screenBatchID).ToList();
+
+
+            if (currentBatchID != screenBatchID)
+            {
+                //   return false;1
+                if (screenItems.Count == 0)
+                    isListChange = true;
+                else
+                {
+                    isListChange = string.Join("", currentItems.OrderBy(x => x.Name).Select(x => x.Name)) != string.Join("", screenItems.OrderBy(x => x.Name).Select(x => x.Name));
+                    if (!isListChange)
+                    {
+
+                    }
+                    else
+                    {
+
+
+                    }
+
+                }
+            }
+
+            var ScreenItemObj = screenItems.Where(x => x.Name == newProduct).FirstOrDefault();
+            var currentItemObj = currentItems.Where(x => x.Name == newProduct).FirstOrDefault();
+            if (isListChange && ScreenItemObj != null)
+            {
+                isHighLight = false;
+            }
+            decimal difference = 0;
+
+            if (ScreenItemObj != null && ScreenItemObj.Value != 0)
+            {
+                difference = currentItemObj.Value - ScreenItemObj.Value;
+
+
+            }
+
+
+            jobj["isNew"] = ScreenItemObj == null;
+
+            jobj["isListChange"] = isListChange;
+            jobj["isHighLight"] = isHighLight;
+            jobj["OldValue"] = screenItems.Where(x => x.Name == newProduct).FirstOrDefault()?.Value ?? 0;
+            jobj["Difference"] = difference;
+            jobj["OldLastSync"] = screenItems.Where(x => x.Name == newProduct).FirstOrDefault()?.LastSync.ToString("yyyy-MM-dd HH:mm:ss") ?? "";
+            //jobj["isHighLight"] = !isListChange
+
+
+            return jobj;
+        }
+
+
+        public async Task<JObject> GetCompareNew(string newProduct, int currentBatchID, int screenBatchID)
+        {
+            var jobj = new JObject();
+
+            var currentItems = db.JPMorgans.Where(x => x.BatchID == currentBatchID).ToList();
+            var screenItems = db.JPMorgans.Where(x => x.BatchID == screenBatchID).ToList();
+
+            bool isNew = false;
+            bool isListChange = string.Join("", currentItems.OrderBy(x => x.Name).Select(x => x.Name)) != string.Join("", screenItems.OrderBy(x => x.Name).Select(x => x.Name));
+            string listString = string.Join("", currentItems.OrderBy(x => x.Name).Select(x => x.Name));
+
+            foreach (var item in db.JPMorganSyncs.OrderByDescending(x => x.id == currentBatchID - 1).ThenByDescending(c => c.id))
+            {
+                //if (item.id == currentBatchID || item.id == screenBatchID)
+                //    continue;
+                var oldItems = db.JPMorgans.Where(x => x.BatchID == item.id).ToList();
+
+                string oldListString = string.Join("", oldItems.OrderBy(x => x.Name).Select(x => x.Name));
+
+                if (listString != oldListString)
+                {
+                    if (currentItems.OrderBy(x => x.Name).Select(x => x.Name).Except(
+                        oldItems.OrderBy(x => x.Name).Select(x => x.Name)
+
+                        ).ToList().Count == 0)
+                    {
+                        isListChange = false;
+                        jobj["ExceptList"] = JArray.FromObject(oldItems.OrderBy(x => x.Name).Select(x => x.Name).Except(
+                     currentItems.OrderBy(x => x.Name).Select(x => x.Name)
+                     ).ToList());
+                        continue;
+                    }
+                   
+                    //  isListChange=true;
+
+
+
+                    jobj["oldBatchId"] = item.id;
+                    //found the last difference batch items
+                    if (oldItems.Where(x => x.Name == newProduct).ToList().Count == 0)
+                    {
+                        isNew = true;
+                        break;
+                    }
+                    else
+                    {
+                        break;
+
+                    }
+                }
+
+            }
+
+
+
+            jobj["isNew"] = isNew;
+            jobj["isListChange"] = isListChange;
+
+
+
+
+            return jobj;
+        }
+
+
+        public async Task<JObject> GetData(string strScreenBatchID)
+        {
+            if (string.IsNullOrEmpty(strScreenBatchID))
+                strScreenBatchID = "0";
+            int ScreenBatchID = Convert.ToInt32(strScreenBatchID);
             //poolHandle();
             var obj = new JObject();
             try
             {
                 var pareTime = DateTime.Now.AddSeconds(-10);
 
-                var batch = db.JPMorganSyncs.ToList().LastOrDefault();
+                var latestBatch = db.JPMorganSyncs.ToList().LastOrDefault();
 
                 //avoid every user call jpm
-                if (batch != null && batch.LastSync >= pareTime || DateTime.Now.Hour > 16 || DateTime.Now.Hour < 8)
+                if (latestBatch != null && latestBatch.LastSync >= pareTime || DateTime.Now.Hour > 16 || DateTime.Now.Hour < 8)
                 {
-                    var list = db.JPMorgans.Where(x => x.BatchID == batch.id).ToList();
+                    var latestBatchBdy = db.JPMorgans.Where(x => x.BatchID == latestBatch.id).ToList();
 
                     JArray arr = new JArray();
 
 
 
-                    foreach (var item in list)
+                    foreach (var bdy in latestBatchBdy)
                     {
 
                         var tmp = new JObject();
-                        tmp["Name"] = item.Name;
-                        tmp["Value"] = item.Value == 0 ? "-" : item.Value.ToString();
-                        tmp["IsNew"] = this.isNew(item.Name, batch.id, userBathid) ? 1 : 0;
-                        tmp["LastSync"] = item.LastSync.ToString("yyyy-MM-dd HH:mm:ss");
-                        arr.Add(tmp);
 
+                        var comObj = await this.GetCompareNew(bdy.Name, latestBatch.id, ScreenBatchID);
+
+                        tmp["Name"] = bdy.Name.Replace("<a href=\"", "<a href=\"https://www.jpmhkwarrants.com").Replace("\">", "\" target='_blank' >");
+                        tmp["Value"] = bdy.Value == 0 ? "-" : bdy.Value.ToString();
+                        tmp["isHighLight"] = comObj["isNew"];
+                        tmp["isListChange"] = comObj["isListChange"];
+                        tmp["oldBatchId"] = comObj["oldBatchId"];
+                        //tmp["OldLastSync"] = comObj["OldLastSync"];
+                        //tmp["Difference"] = comObj["Difference"];
+                        tmp["ExceptList"] = comObj["ExceptList"];
+                        tmp["LastSync"] = bdy.LastSync.ToString("yyyy-MM-dd HH:mm:ss");
+                        arr.Add(tmp);
+                        
 
                     }
-
+                    obj["SyncTime"] = latestBatch.LastSync;
                     obj["Data"] = arr;
-                    obj["BatchID"] = batch.id;
+                    obj["BatchID"] = latestBatch.id;
                     return obj;
 
                 }
@@ -178,45 +320,56 @@ namespace jpmhkwarrants_capture.Controllers
                 var table = docStockContext.DocumentNode.SelectSingleNode("//table");
                 var cells = table.SelectNodes(@"//tbody/tr/td");
 
-                batch = new JPMorganSync { LastSync = DateTime.Now };
-                db.JPMorganSyncs.Add(batch);
+                latestBatch = new JPMorganSync { LastSync = DateTime.Now };
+                db.JPMorganSyncs.Add(latestBatch);
                 await db.SaveChangesAsync();
 
-                obj["BatchID"] = batch.id;
-                JArray objs = new JArray();
+                obj["BatchID"] = latestBatch.id;
+                obj["SyncTime"] = latestBatch.LastSync;
+
                 DateTime curr = DateTime.Now;
                 int idx = 1;
-                string key = "";
+                string ProductName = "";
                 foreach (var item in cells)
                 {
 
                     if (idx % 2 == 0)
                     {
-                        var tmp = new JObject();
-                        tmp["Name"] = key;
-                        tmp["Value"] = item.InnerText;
-                        tmp["IsNew"] = this.isNew(key, batch.id, userBathid) ? 1 : 0;
-                        tmp["LastSync"] = lastSync.ToString("yyyy-MM-dd HH:mm:ss");
-                        objs.Add(tmp);
                         decimal tmpVal = 0;
                         decimal.TryParse(item.InnerText, out tmpVal);
+                        db.JPMorgans.Add(new JPMorgan { Name = ProductName, Value = tmpVal, LastSync = lastSync, BatchID = latestBatch.id });
 
 
-                        db.JPMorgans.Add(new JPMorgan { Name = tmp["Name"].ToString(), Value = tmpVal, LastSync = lastSync, BatchID = batch.id });
                     }
                     else
                     {
-                        key = item.InnerHtml;
+                        ProductName = item.InnerHtml;
                     }
 
                     idx++;
                 }
+                await db.SaveChangesAsync();
+                var curBatchBdy = db.JPMorgans.Where(x => x.BatchID == latestBatch.id).ToList();
+                JArray objs = new JArray();
+
+                foreach (var item in curBatchBdy)
+                {
+                    var comObj = await this.GetCompareNew(item.Name, latestBatch.id, ScreenBatchID);
+                    var tmp = new JObject();
+                    tmp["Name"] = item.Name.Replace("<a href=\"", "<a href=\"https://www.jpmhkwarrants.com").Replace("\">", "\" target='_blank' >");
+                    tmp["Value"] = item.Value;
+                    tmp["isHighLight"] = comObj["isNew"];
+                    tmp["isListChange"] = comObj["isListChange"];
+                    tmp["oldBatchId"] = comObj["oldBatchId"];
+                    //tmp["OldLastSync"] = comObj["OldLastSync"];
+                    //tmp["Difference"] = comObj["Difference"];
+                    tmp["LastSync"] = lastSync.ToString("yyyy-MM-dd HH:mm:ss");
+                    tmp["ExceptList"] = comObj["ExceptList"];
+                    objs.Add(tmp);
+                  
+                }
 
                 obj["Data"] = objs;
-
-
-                await db.SaveChangesAsync();
-
 
             }
             catch (Exception ex)
