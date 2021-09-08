@@ -14,12 +14,16 @@ using System.Web;
 using System.Web.Mvc;
 using jpmhkwarrants_capture.Models;
 using System.Diagnostics;
+using NLog;
 
 namespace jpmhkwarrants_capture.Controllers
 {
     [HandleError]
     public class HomeController : AsyncController
     {
+        private static Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
+
         private StockEntities1 db
         {
             get
@@ -243,7 +247,7 @@ namespace jpmhkwarrants_capture.Controllers
             jobj["isNew"] = isNew;
             jobj["isListChange"] = isListChange;
 
-
+            logger.Info(jobj.ToString());
 
 
             return jobj;
